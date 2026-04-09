@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Warehouse, Receipt, CalendarCheck, 
-  Menu, LogOut, Store, ScanBarcode, User, Settings, ChevronDown, X, Import
+  Menu, LogOut, Store, ScanBarcode, User, Settings, ChevronDown, X, Import,File
 } from 'lucide-react';
 
 const AdminLayout = ({ user }) => {

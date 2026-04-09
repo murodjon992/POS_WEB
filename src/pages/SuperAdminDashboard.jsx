@@ -41,7 +41,7 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       // Backend: @api_view(['GET']) va @permission_classes([IsAdminUser]) bo'lgan endpoint
-      const res = await api.get("/superadmin-stats/"); 
+      const res = await api.get("/admin-store-stats/"); 
       setData(res.data);
     } catch (err) {
       console.error("Superadmin ma'lumotlarini yuklashda xato:", err);
