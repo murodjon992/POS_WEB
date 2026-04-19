@@ -47,15 +47,11 @@ const Products = ({ user }) => {
   const fetchProducts = async (page = 1) => {
     try {
       setLoading(true);
-      console.log('sorov boshlandi');
       
       const url = `/products/?page=${page}${searchTerm ? `&search=${searchTerm}` : ""}`;
       const res = await api.get(url);
-      console.log('sorov keldi', res.data.results);
-      
-      // DIQQAT: Django Pagination { count, results } qaytaradi
       if (res.data && res.data.results) {
-        setProducts(res.data); 
+        setProducts(res.data.results); 
         setTotalItems(res.data.count);
         setTotalPages(Math.ceil(res.data.count / 20));
       } else {

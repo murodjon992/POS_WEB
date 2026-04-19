@@ -1,324 +1,233 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Edit3, Trash2, Plus, Package, X, Lock, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, Edit3, Package, X, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import api from '../api/api';
 
 const Inventory = ({ user }) => {
   const [products, setProducts] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [alerts, setAlerts] = useState({ out_of_stock: 0, low_stock: 0 });
 
-  // Form ma'lumotlari
-  const [formData, setFormData] = useState({
-    product_name: "",
-    barcode: "",
-    purchase_price: "",
-    sale_price: "",
-    quantity: "",
-    category: "",
-    owner: "",
-  });
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    fetchInventory();
-    loadCategories();
-    if (user?.is_superuser) {
-      fetchUsers();
-    }
-  }, [user]);
+  // Miqdor uchun state
+  const [quantityToAdd, setQuantityToAdd] = useState("");
 
-  // 1. Ombor ma'lumotlarini yuklash
-  const fetchInventory = async () => {
+  // 1. Ma'lumotlarni yuklash (Kategoriya filtri bilan)
+  const fetchInventory = useCallback(async (page = 1) => {
     try {
       setLoading(true);
-      const res = await api.get('/inventory/');
-      const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
-      setProducts(data);
+      const params = {
+        page: page,
+        search: searchTerm,
+        category: categoryFilter, // Backendda bu "category" nomi bilan kutilayotgan bo'lishi kerak
+      };
+      
+      const res = await api.get('/inventory/', { params });
+      
+      // DRF Pagination va sening backend formatingga moslash
+      let productsData = [];
+      if (res.data.results) {
+        if (res.data.results.results) {
+          productsData = res.data.results.results;
+          if (res.data.results.alerts) setAlerts(res.data.results.alerts);
+        } else {
+          productsData = res.data.results;
+        }
+      } else {
+        productsData = res.data;
+      }
+
+      setProducts(productsData);
+
+      if (res.data.count) {
+        setTotalPages(Math.ceil(res.data.count / 20));
+      }
+      setCurrentPage(page);
     } catch (err) {
       console.error("Yuklashda xato:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, categoryFilter]);
 
-  // 2. Kategoriyalarni yuklash va foydalanuvchiga qarab filtrlash
-  const loadCategories = async () => {
-    try {
-      const res = await api.get("/categories/");
-      // Agar superadmin bo'lsa hamma kategoriya, aks holda faqat o'ziniki
-      const filteredCats = user?.is_superuser 
-        ? res.data 
-        : res.data.filter(cat => cat.owner === user?.id);
-      setAllCategories(filteredCats);
-    } catch (err) {
-      console.error("Kategoriyalarni yuklashda xato");
-    }
-  };
+  // Effektlar
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => fetchInventory(1), 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, categoryFilter, fetchInventory]);
 
-  // 3. Foydalanuvchilarni yuklash (Faqat Admin uchun)
-  const fetchUsers = async () => {
-    try {
-      const res = await api.get("/users/all/");
-      setAllUsers(res.data);
-    } catch (err) {
-      console.error("Userlarni yuklashda xato");
-    }
-  };
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await api.get("/categories/");
+        setAllCategories(res.data);
+      } catch (err) {
+        console.error("Kategoriyalar yuklanmadi");
+      }
+    };
+    loadCategories();
+  }, []);
 
-  // 4. Modalni ochish (Yangi yoki Tahrirlash uchun)
-  const openModal = (product = null) => {
-    if (product) {
-      setSelectedProduct(product);
-      setFormData({
-        product_name: product.product_name || "",
-        barcode: product.barcode || "",
-        purchase_price: product.purchase_price || "",
-        sale_price: product.sale_price || "",
-        quantity: product.quantity || "",
-        category: product.category || "",
-        owner: product.owner || ""
-      });
-    } else {
-      setSelectedProduct(null);
-      setFormData({
-        product_name: "",
-        barcode: "",
-        purchase_price: "",
-        sale_price: "",
-        quantity: "",
-        category: allCategories.length > 0 ? allCategories[0].id : "",
-        owner: user?.is_superuser ? "" : user?.id,
-      });
-    }
+  // 2. Tahrirlash modalini ochish
+  const openEditModal = (item) => {
+    setSelectedProduct(item);
+    setQuantityToAdd(""); // Yangi qo'shiladigan miqdorni bo'shatamiz
     setShowModal(true);
   };
 
-  // 5. Ma'lumotni saqlash (POST yoki PUT)
-  const handleSubmit = async (e) => {
+  // 3. SAQLASH (Mobil kabi stock/add/ orqali)
+  const handleUpdateStock = async (e) => {
     e.preventDefault();
-    const dataToSend = {
-      ...formData,
-      category: parseInt(formData.category),
-      owner: user?.is_superuser ? parseInt(formData.owner) : user?.id,
-      quantity: parseInt(formData.quantity)
-    };
+    if (!quantityToAdd || isNaN(quantityToAdd)) {
+      alert("Iltimos, miqdorni to'g'ri kiriting!");
+      return;
+    }
 
     try {
-      if (selectedProduct) {
-        await api.put(`/inventory/${selectedProduct.id}/`, dataToSend);
-      } else {
-        await api.post("/inventory/", dataToSend);
-      }
-      fetchInventory();
-      closeModal();
+      // MOBIL ILOVADAGI MANTIQ: stock/add/ ga POST so'rovi
+      await api.post("stock/add/", {
+        barcode: selectedProduct.barcode,
+        quantity: parseInt(quantityToAdd)
+      });
+      
+      fetchInventory(currentPage); 
+      setShowModal(false);
+      alert("Ombor muvaffaqiyatli yangilandi!");
     } catch (err) {
-      alert("Xatolik! Ma'lumotlarni tekshirib qaytadan urining.");
+      console.error("Saqlashda xato:", err.response?.data);
+      alert("Xatolik! Saqlashda muammo yuz berdi.");
     }
   };
-
-  // 6. O'chirish
-  const handleDelete = async (id) => {
-    if (window.confirm("Haqiqatan ham ushbu mahsulotni o'chirmoqchimisiz?")) {
-      try {
-        await api.delete(`/inventory/${id}/`);
-        fetchInventory();
-      } catch (err) {
-        alert("O'chirishda xatolik yuz berdi.");
-      }
-    }
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedProduct(null);
-  };
-
-  // Qidiruv filtri
-  const filteredProducts = products.filter(p => {
-    const search = searchTerm.toLowerCase();
-    return (
-      p.product_name?.toLowerCase().includes(search) || 
-      p.barcode?.toString().includes(search) || 
-      p.owner_name?.toLowerCase().includes(search)
-    );
-  });
-
-  if (loading) return <div className="p-10 text-center font-bold text-slate-400">Yuklanmoqda...</div>;
 
   return (
     <div className="space-y-6 p-2">
       
-      {/* SEARCH VA ADD BUTTON */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <div className="relative w-full md:w-96">
+      {/* STATISTIKA */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div className="p-3 bg-red-100 text-red-600 rounded-xl"><Package size={24} /></div>
+          <div>
+            <p className="text-xs text-slate-400 font-bold uppercase">Tugagan</p>
+            <p className="text-2xl font-black text-slate-800">{alerts.out_of_stock}</p>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div className="p-3 bg-amber-100 text-amber-600 rounded-xl"><AlertCircle size={24} /></div>
+          <div>
+            <p className="text-xs text-slate-400 font-bold uppercase">Kam qolgan</p>
+            <p className="text-2xl font-black text-slate-800">{alerts.low_stock}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* FILTER VA QIDIRUV */}
+      <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
           <input 
             type="text" 
-            placeholder="Nomi, egasi yoki shtrix-kod..." 
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            placeholder="Qidiruv..." 
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
+            value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
-          onClick={() => openModal()}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-all"
-        >
-          <Plus size={20} /> Mahsulot Qo'shish
-        </button>
+        <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+          <Filter size={18} className="text-slate-400" />
+          <select 
+            className="bg-transparent outline-none text-sm font-bold text-slate-700"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">Barcha kategoriyalar</option>
+            {allCategories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* JADVAL */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs uppercase font-bold tracking-wider">
+              <tr className="bg-slate-50 border-b text-slate-500 text-xs font-black uppercase tracking-widest">
                 <th className="px-6 py-4">T/R</th>
-                {user?.is_superuser && <th className="px-6 py-4">Do'kondor</th>}
                 <th className="px-6 py-4">Mahsulot</th>
-                <th className="px-6 py-4">Shtrix-kod</th>
-                <th className="px-6 py-4 text-right">Sotish narxi</th>
-                <th className="px-6 py-4 text-center">Omborda</th>
-                <th className="px-6 py-4 text-center">Amallar</th>
+                <th className="px-6 py-4 text-center">Soni</th>
+                <th className="px-6 py-4 text-center">Harakat</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredProducts.map((product, index) => (
-                <tr key={product.id} className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="px-6 py-4 text-slate-400 text-sm">{index + 1}</td>
-                  {user?.is_superuser && (
-                    <td className="px-6 py-4 font-medium text-indigo-600">@{product.owner_name}</td>
-                  )}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-orange-50 text-orange-600 rounded-lg group-hover:bg-orange-600 group-hover:text-white transition-all">
-                        <Package size={16} />
-                      </div>
-                      <span className="font-bold text-slate-800">{product.product_name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-xs text-slate-500">{product.barcode}</td>
-                  <td className="px-6 py-4 text-right font-bold text-slate-700">
-                    {Number(product.sale_price).toLocaleString()} so'm
+              {products.map((p, i) => (
+                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-slate-400 text-sm">{(currentPage-1)*20 + i + 1}</td>
+                  <td className="px-6 py-4 font-bold text-slate-800">
+                    {p.product_name}
+                    <p className="text-[10px] font-mono text-slate-400">{p.barcode}</p>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className="bg-purple-100 text-purple-700 text-xs font-black px-2.5 py-1 rounded-full">
-                      {Number(product.quantity).toLocaleString()} dona
+                    <span className={`px-3 py-1 rounded-full text-xs font-black ${
+                      p.quantity <= 0 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {p.quantity} dona
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-center gap-1">
-                      <button onClick={() => openModal(product)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit3 size={16} /></button>
-                      <button onClick={() => handleDelete(product.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
-                    </div>
+                  <td className="px-6 py-4 text-center">
+                    <button 
+                      onClick={() => openEditModal(p)}
+                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                    >
+                      <Edit3 size={18} />
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {filteredProducts.length === 0 && (
-          <div className="p-16 text-center text-slate-400 font-medium">Ma'lumot topilmadi...</div>
-        )}
       </div>
 
-      {/* ADD/EDIT MODAL */}
+      {/* PAGINATION */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border">
+        <span className="text-sm text-slate-500 font-medium">Sahifa {currentPage} / {totalPages}</span>
+        <div className="flex gap-2">
+          <button disabled={currentPage === 1} onClick={() => fetchInventory(currentPage-1)} className="p-2 border rounded-xl hover:bg-slate-50 disabled:opacity-30"><ChevronLeft size={20} /></button>
+          <button disabled={currentPage === totalPages} onClick={() => fetchInventory(currentPage+1)} className="p-2 border rounded-xl hover:bg-slate-50 disabled:opacity-30"><ChevronRight size={20} /></button>
+        </div>
+      </div>
+
+      {/* MODAL (STOCK ADD) */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="px-8 py-5 bg-slate-50 border-b flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-800">
-                {selectedProduct ? "Zaxirani Yangilash" : "Yangi Mahsulot"}
-              </h3>
-              <button onClick={closeModal} className="p-2 hover:bg-slate-200 rounded-full transition-all"><X size={20} /></button>
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl">
+            <div className="px-8 py-6 bg-slate-50 border-b flex justify-between items-center">
+              <h3 className="text-xl font-black">Zahirani to'ldirish</h3>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-200 rounded-full"><X size={20} /></button>
             </div>
-
-            <form onSubmit={handleSubmit} className="p-8 space-y-5">
-              
-              {/* ASOSIY INPUT: SONI (Har doim ochiq va fokusda) */}
-              <div className="bg-indigo-50 p-4 rounded-2xl border-2 border-indigo-100">
-                <label className="block text-xs font-black text-indigo-600 uppercase mb-2 tracking-widest">Ombordagi Soni (Dona)</label>
+            <form onSubmit={handleUpdateStock} className="p-8 space-y-6">
+              <div>
+                <p className="text-sm font-bold text-slate-600 mb-2">{selectedProduct?.product_name}</p>
                 <input 
-                  type="number"
-                  className="w-full p-3 bg-white border-2 border-indigo-200 rounded-xl outline-none focus:border-indigo-500 font-black text-2xl text-center"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                  required
+                  type="number" 
+                  placeholder="Qancha qo'shmoqchisiz?"
+                  className="w-full p-4 text-2xl font-black text-center bg-indigo-50 border-2 border-indigo-100 rounded-2xl outline-none focus:border-indigo-500"
+                  value={quantityToAdd}
+                  onChange={(e) => setQuantityToAdd(e.target.value)}
                   autoFocus
                 />
               </div>
-
-              {/* MAHSULOT MA'LUMOTLARI (Editda muzlatiladi) */}
-              <div className={`space-y-4 ${selectedProduct ? 'opacity-50 pointer-events-none' : ''}`}>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mahsulot Nomi</label>
-                    <div className="relative">
-                      <input 
-                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none"
-                        value={formData.product_name}
-                        onChange={(e) => setFormData({...formData, product_name: e.target.value})}
-                        required={!selectedProduct}
-                      />
-                      {selectedProduct && <Lock size={12} className="absolute right-3 top-3.5 text-slate-400" />}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Shtrix-kod</label>
-                    <input 
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none"
-                      value={formData.barcode}
-                      onChange={(e) => setFormData({...formData, barcode: e.target.value})}
-                      required={!selectedProduct}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kategoriya</label>
-                    <select 
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none"
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                      required={!selectedProduct}
-                    >
-                      <option value="">Tanlang...</option>
-                      {allCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {user?.is_superuser && !selectedProduct && (
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Do'kon Egasi</label>
-                    <select 
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none"
-                      value={formData.owner}
-                      onChange={(e) => setFormData({...formData, owner: e.target.value})}
-                      required={user?.is_superuser && !selectedProduct}
-                    >
-                      <option value="">Egasi kim?</option>
-                      {allUsers.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {selectedProduct && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
-                  <AlertCircle size={16} className="text-amber-600 mt-0.5 shrink-0" />
-                  <p className="text-[10px] text-amber-700 leading-relaxed">
-                    Tahrirlash rejimida faqat mahsulot <b>sonini</b> o'zgartirishingiz mumkin. Boshqa ma'lumotlarni o'zgartirish uchun "Mahsulotlar" bo'limidan foydalaning.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={closeModal} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 rounded-2xl font-bold text-slate-600 transition-all">Bekor qilish</button>
-                <button type="submit" className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 transition-all">Saqlash</button>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 rounded-2xl font-bold">Bekor qilish</button>
+                <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold">Tasdiqlash</button>
               </div>
             </form>
           </div>
