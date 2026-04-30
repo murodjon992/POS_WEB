@@ -4,12 +4,14 @@ import {
   LayoutDashboard, Users, Warehouse, Receipt, CalendarCheck, 
   Menu, LogOut, Store, ScanBarcode, User, Settings, ChevronDown, X, Import,File
 } from 'lucide-react';
+import myLogo from '../assets/icon.png'
 
 const AdminLayout = ({ user }) => {
   // Sidebar holati (agar context ishlamasa, shu yerda boshqaramiz)
   const [isExpanded, setIsExpanded] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
+  
 
   // Tashqariga bosilganda dropdownni yopish
   useEffect(() => {
@@ -58,7 +60,7 @@ const AdminLayout = ({ user }) => {
       
       {/* --- ASIDE (SIDEBAR) --- */}
       <aside 
-        className={`fixed inset-y-0 left-0 bg-[#1C2434] text-slate-300 transition-all duration-300 z-50 flex flex-col shadow-2xl ${
+        className={`fixed inset-y-0 left-0 bg-mist-800 text-slate-300 transition-all duration-300 z-50 flex flex-col shadow-2xl ${
           isExpanded ? 'w-72' : 'w-20'
         }`}
       >
@@ -66,8 +68,8 @@ const AdminLayout = ({ user }) => {
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-700/50">
           {isExpanded && (
             <span className="font-black text-xl text-white tracking-wider flex items-center gap-2">
-              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center text-sm italic text-white">B</div>
-              BARAKA <p className="text-orange-600">POS</p>
+              <img width={50} src={myLogo} alt="" />
+              BARAKA <p className="text-amber-500">POS</p>
             </span>
           )}
           <button 
@@ -95,7 +97,7 @@ const AdminLayout = ({ user }) => {
                     className={({ isActive }) => `
                       flex items-center p-3.5 rounded-xl transition-all duration-200 group
                       ${isActive 
-                        ? 'bg-orange-700 text-white shadow-lg shadow-blue-600/20' 
+                        ? 'bg-amber-700 text-white shadow-lg shadow-blue-600/20' 
                         : 'hover:bg-slate-800/50 hover:text-white'}
                     `}
                   >
@@ -129,7 +131,7 @@ const AdminLayout = ({ user }) => {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-3 p-1 rounded-full hover:bg-slate-100 transition-all border border-slate-100"
             >
-              <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+              <div className="w-10 h-10 rounded-full bg-indigo-800 flex items-center justify-center text-white font-bold text-lg shadow-inner">
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
               <div className="hidden sm:block text-left pr-2">

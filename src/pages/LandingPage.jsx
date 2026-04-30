@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Store, Users, Zap, Award, Crown, AlarmClock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../api/api';
-
+import mainLogo from '../assets/icon.png'
 const LandingPage = () => {
   const [plans, setPlans] = useState([])
 
@@ -23,7 +23,8 @@ const LandingPage = () => {
       {/* NAVBAR */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="text-2xl font-black text-orange-600 tracking-tighter">
+          <div className="text-2xl font-black flex items-center text-amber-600 tracking-tighter">
+            <img width={50} src={mainLogo} alt="" />
             Baraka<span className="text-gray-900">POS</span>
           </div>
           
@@ -37,7 +38,7 @@ const LandingPage = () => {
             <Link to="/login" className="px-5 py-2.5 text-sm font-semibold text-gray-700 hover:text-blue-600 transition">
               Kirish
             </Link>
-            <Link to="/register" className="px-6 py-2.5 bg-orange-600 text-white text-sm font-bold rounded-full hover:bg-orange-700 shadow-lg shadow-blue-200 transition">
+            <Link to="/register" className="px-6 py-2.5 bg-amber-600 text-white text-sm font-bold rounded-full hover:bg-amber-700 shadow-lg shadow-blue-200 transition">
               Boshlash
             </Link>
           </div>
@@ -49,7 +50,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight">
             Biznesingizni <br />
-            <span className="bg-gradient-to-r from-orange-600 to-indigo-800 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-amber-600 to-indigo-800 bg-clip-text text-transparent">
               Aqlli Boshqaring
             </span>
           </h1>
@@ -89,7 +90,7 @@ const LandingPage = () => {
 
  <section id="plans" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
-    <h1 className='text-center text-4xl font-bold text-orange-700 my-15'>Tariflar</h1>
+    <h1 className='text-center text-4xl font-bold text-amber-700 my-15'>Tariflar</h1>
           <div className="grid md:grid-cols-3 gap-10">
            {plans.map((f, i) => {
             // Har bir tarif uchun har xil ikonka va uslublar
@@ -100,12 +101,12 @@ const LandingPage = () => {
                 key={i} 
                 className={`relative p-8 rounded-[2.5rem] border transition-all duration-500 group ${
                   isPopular 
-                    ? 'bg-white border-orange-500 shadow-2xl shadow-orange-100 scale-105 z-10' 
-                    : 'bg-white border-gray-100 hover:border-orange-200 hover:shadow-xl'
+                    ? 'bg-white border-amber-500 shadow-2xl shadow-amber-100 scale-105 z-10' 
+                    : 'bg-white border-gray-100 hover:border-amber-200 hover:shadow-xl'
                 }`}
               >
                 {isPopular && (
-                  <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+                  <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-amber-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
                     Eng ommabop
                   </span>
                 )}
@@ -115,7 +116,7 @@ const LandingPage = () => {
                     <h3 className="text-2xl font-bold text-gray-900">{f.name}</h3>
                     <p className="text-gray-500 text-sm mt-1">Kichik va o'rta biznes uchun</p>
                   </div>
-                  <div className={`p-3 rounded-2xl ${isPopular ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'}`}>
+                  <div className={`p-3 rounded-2xl ${isPopular ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600'}`}>
                     {i === 0 ? <Zap size={24} /> : i === 1 ? <Award size={24} /> : <Crown size={24} />}
                   </div>
                 </div>
@@ -131,7 +132,7 @@ const LandingPage = () => {
                     <span className="text-gray-600 font-medium">Cheksiz mahsulot kiritish</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Store className="text-orange-500 shrink-0" size={20} />
+                    <Store className="text-amber-500 shrink-0" size={20} />
                     <span className="text-gray-600 font-medium">Do'konlar: <b className="text-gray-900">{f.max_baranchs} ta</b></span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -146,7 +147,7 @@ const LandingPage = () => {
 
                 <button className={`w-full py-4 rounded-2xl font-bold transition-all duration-300 ${
                   isPopular 
-                    ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-lg shadow-orange-200' 
+                    ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-lg shadow-amber-200' 
                     : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}>
                   Tanlash

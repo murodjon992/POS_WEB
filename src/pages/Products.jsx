@@ -12,11 +12,16 @@ const Products = ({ user }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
-
+  const [selectCategoryFilter, setselectCategoryFilter] = useState("");
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [printOptions, setprintOptions] = useState({
+    includeName: true,
+    includePrice: true,
+    includeBarcodeText:true
+  });
 
   const [formData, setFormData] = useState({
     name: "", barcode: "", purchase_price: "", sale_price: "", category: "", owner: "",
@@ -36,6 +41,10 @@ const Products = ({ user }) => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
+  useEffect(() => {
+  fetchProducts(1);
+}, [selectCategoryFilter]);
+
   // --- MA'LUMOTLARNI YUKLASH ---
   const loadCategories = async () => {
     try {
@@ -47,9 +56,13 @@ const Products = ({ user }) => {
   const fetchProducts = async (page = 1) => {
     try {
       setLoading(true);
+      let url = `/products/?page=${page}`
+      if (searchTerm) url += `&search=${searchTerm}`;
+      if (selectCategoryFilter) url += `&category=${selectCategoryFilter}`
+
+      const res = await api.get(url)
+      console.log(res);
       
-      const url = `/products/?page=${page}${searchTerm ? `&search=${searchTerm}` : ""}`;
-      const res = await api.get(url);
       if (res.data && res.data.results) {
         setProducts(res.data.results); 
         setTotalItems(res.data.count);
@@ -73,7 +86,10 @@ const Products = ({ user }) => {
     
     setPdfLoading(true);
     try {
-      const response = await api.post('print-barcodes/', { product_ids: targetIds }, { responseType: 'blob' });
+      const response = await api.post('print-barcodes/', {
+         product_ids: targetIds,
+         options: printOptions
+         }, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -128,16 +144,37 @@ const Products = ({ user }) => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
+          </div>
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+            <select name="" id="" className="px-4 py-2.5 bg-slate-200 rounded-xl outline-none border border-transparent focus:border-blue-500 focus:bg-white transition-all text-sm font-medium" value={selectCategoryFilter} onChange={(e) => setselectCategoryFilter(e.target.value)}>
+                <option value="">Barcha kategoriyalar</option>
+                  {allCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+            </select>
+          </div>
         
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <button
+         
+          <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl border border-slate-200">
+            <span className="text-sm font-bold text-slate-600">Chop etish</span>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={printOptions.includeName} onChange={e => setprintOptions({...printOptions,includeName: e.target.checked})} /> Nomi
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={printOptions.includePrice} onChange={e => setprintOptions({...printOptions,includePrice: e.target.checked})} /> Narxi
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={printOptions.includeBarcodeText} onChange={e => setprintOptions({...printOptions,includeBarcodeText: e.target.checked})} /> Shtrix codi
+            </label>
+             <button
             onClick={() => handleDownloadPDF(selectedIds)}
             disabled={pdfLoading || !products || products.length === 0}
-            className="flex-1 md:flex-none bg-indigo-50 text-indigo-600 px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 border border-indigo-200"
+            className="flex-1 md:flex-none bg-indigo-50 text-indigo-600 px-2 py-1 rounded-xl font-bold flex items-center justify-center gap-2 border border-indigo-200"
           >
-            {pdfLoading ? "Yuklanmoqda..." : <><Download size={19} /> PDF Export</>}
+            {pdfLoading ? "Yuklanmoqda..." : <><Download size={19} />Shtrix pechat</>}
           </button>
+          </div>
           <button onClick={() => openModal()} className="flex-1 md:flex-none bg-slate-800 text-white px-6 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg">
             <Plus size={20} /> Qo'shish
           </button>
@@ -153,11 +190,20 @@ const Products = ({ user }) => {
                 <th className="px-6 py-4 w-10">
                   <input 
                     type="checkbox" 
-                    onChange={(e) => setSelectedIds(e.target.checked ? products.map(p => p.id) : [])} 
+                    onChange={(e) => {
+                      if(e.target.checked){
+                        const newIds = products.map(p => p.id).filter(id => !selectedIds.includes(id));
+                        setSelectedIds([...selectedIds,...newIds])
+                      } else {
+                        const currentBatchIds = products.map(p => p.id)
+                        setSelectedIds(selectedIds.filter(id => !currentBatchIds.includes(id)))
+                      }
+                    }} 
                   />
                 </th>
                 <th className="px-6 py-4">Mahsulot nomi</th>
                 <th className="px-6 py-4">Shtrix-kod</th>
+                <th className="px-6 py-4">Kategoriya</th>
                 <th className="px-6 py-4 text-right">Narxi</th>
                 <th className="px-6 py-4 text-center">Amallar</th>
               </tr>
@@ -177,6 +223,7 @@ const Products = ({ user }) => {
                     </td>
                     <td className="px-6 py-4 font-bold text-slate-700">{product.name}</td>
                     <td className="px-6 py-4 font-mono text-sm">{product.barcode}</td>
+                    <td className="px-6 py-4 font-mono  text-sm"> <span className="bg-indigo-100 p-1 rounded text-indigo-800"> {product.category_name}</span></td>
                     <td className="px-6 py-4 text-right font-black">{Number(product.sale_price).toLocaleString()}</td>
                     <td className="px-6 py-4 flex justify-center gap-1">
                       <button onClick={() => handleDownloadPDF([product.id])} className="p-2 text-green-600 hover:bg-green-50 rounded-lg"><Printer size={16} /></button>
