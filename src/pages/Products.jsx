@@ -13,6 +13,7 @@ const Products = ({ user }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectCategoryFilter, setselectCategoryFilter] = useState("");
+  const [allUsers, setAllUsers] = useState([]);
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -27,11 +28,18 @@ const Products = ({ user }) => {
     name: "", barcode: "", purchase_price: "", sale_price: "", category: "", owner: "",
   });
 
+
   // --- EFFEKTLAR ---
   useEffect(() => {
+    if (user?.is_superuser) fetchUsers();
     fetchProducts(1);
     loadCategories();
   }, [user]);
+
+  const fetchUsers = async () => {
+  const res = await api.get("/users/all/");
+  setAllUsers(res.data.filter(u => !u.is_superuser));
+};
 
   // Qidiruv effekti
   useEffect(() => {
@@ -101,18 +109,33 @@ const Products = ({ user }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (selectedProduct) {
-        await api.put(`/products/${selectedProduct.id}/`, formData);
-      } else {
-        await api.post("/products/", { ...formData, owner: user?.id });
-      }
-      fetchProducts(currentPage);
-      setShowModal(false);
-    } catch (err) { alert("Saqlashda xato!"); }
-  };
+  e.preventDefault();
+  
+  // Superadmin bo'lsa owner tanlanganini tekshirish
+  if (user?.is_superuser && !formData.owner) {
+    alert("Iltimos, avval do'konni tanlang!");
+    return;
+  }
 
+  try {
+    if (selectedProduct) {
+      await api.put(`/products/${selectedProduct.id}/`, formData);
+    } else {
+      // Superadmin bo'lsa formData ichidagi owner ketadi, 
+      // oddiy user bo'lsa user.id biriktiriladi
+      const finalData = {
+        ...formData,
+        owner: user?.is_superuser ? formData.owner : user?.id
+      };
+      await api.post("/products/", finalData);
+    }
+    fetchProducts(currentPage);
+    setShowModal(false);
+  } catch (error) {
+    console.error(error.response?.data);
+    alert("Saqlashda xato: " + (error.response?.data?.detail || "Xatolik yuz berdi"));
+  }
+};
   const handleDelete = async (id) => {
     if (window.confirm("O'chirishni tasdiqlaysizmi?")) {
       await api.delete(`/products/${id}/`);
@@ -202,6 +225,7 @@ const Products = ({ user }) => {
                   />
                 </th>
                 <th className="px-6 py-4">Mahsulot nomi</th>
+                <th className="px-6 py-4">Do'kon egasi</th>
                 <th className="px-6 py-4">Shtrix-kod</th>
                 <th className="px-6 py-4">Kategoriya</th>
                 <th className="px-6 py-4 text-right">Narxi</th>
@@ -222,6 +246,7 @@ const Products = ({ user }) => {
                       />
                     </td>
                     <td className="px-6 py-4 font-bold text-slate-700">{product.name}</td>
+                    <td className="px-6 py-4 font-bold text-slate-700">{product.owner_name}</td>
                     <td className="px-6 py-4 font-mono text-sm">{product.barcode}</td>
                     <td className="px-6 py-4 font-mono  text-sm"> <span className="bg-indigo-100 p-1 rounded text-indigo-800"> {product.category_name}</span></td>
                     <td className="px-6 py-4 text-right font-black">{Number(product.sale_price).toLocaleString()}</td>
@@ -264,14 +289,102 @@ const Products = ({ user }) => {
 
       {/* MODAL (Agar modal kodingiz bo'lsa shu yerga qo'ying) */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-           <div className="bg-white p-6 rounded-2xl w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">{selectedProduct ? 'Tahrirlash' : 'Yangi mahsulot'}</h2>
-              {/* Modal formasi bu yerda bo'ladi */}
-              <button onClick={() => setShowModal(false)} className="mt-4 text-red-500">Yopish</button>
-           </div>
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div className="bg-white p-6 rounded-2xl w-full max-w-md">
+      <h2 className="text-xl font-bold mb-4">{selectedProduct ? 'Tahrirlash' : 'Yangi mahsulot'}</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        
+        {/* OWNER SELECT - Faqat Superadmin uchun */}
+       {user?.is_superuser && (
+  <div className="mb-4">
+    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Do'konni tanlang</label>
+    <select 
+      className="w-full p-2.5 bg-transparent border border-blue-500 outline-none rounded-xl font-bold text-blue-600"
+      value={formData.owner || ""}
+      onChange={(e) => {
+        const selectedOwnerId = e.target.value;
+        setFormData({
+          ...formData, 
+          owner: selectedOwnerId, 
+          category: "" // Owner o'zgarganda kategoriyani reset qilamiz
+        });
+      }}
+      required
+    >
+      <option value="">-- Do'kon tanlang --</option>
+      {allUsers.map(u => (
+        <option key={u.id} value={u.id}>{u.username}</option>
+      ))}
+    </select>
+  </div>
+)}
+
+        <div>
+          <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Mahsulot nomi</label>
+          <input 
+            type="text" required className="w-full p-2.5 bg-transparent border border-gray-500 outline-none rounded-xl"
+            value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
+          />
         </div>
-      )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+  <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Kategoriya</label>
+  <select 
+    className="w-full p-2.5 bg-transparent outline-none border border-gray-500 rounded-xl"
+    value={formData.category || ""} 
+    onChange={e => setFormData({...formData, category: e.target.value})}
+    required
+  >
+    <option value="">-- Kategoriya tanlang --</option>
+    {allCategories
+      .filter(cat => {
+        // MUHIM: Agar superadmin bo'lsa, tanlangan ownerga tegishli kategoriyalarni ko'rsat
+        if (user?.is_superuser) {
+          return String(cat.owner) === String(formData.owner);
+        }
+        // Agar superadmin bo'lmasa, backend o'zi faqat o'zinikini beradi, filter shart emas
+        return true; 
+      })
+      .map(cat => (
+        <option key={cat.id} value={cat.id}>{cat.name}</option>
+      ))}
+  </select>
+</div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Shtrix-kod</label>
+            <input 
+              type="text" className="w-full p-2.5 outline-none bg-transparent border border-gray-500 rounded-xl"
+              value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Sotib olish</label>
+            <input 
+              type="number" className="w-full p-2.5 bg-transparent border border-gray-500 rounded-xl"
+              value={formData.purchase_price} onChange={e => setFormData({...formData, purchase_price: e.target.value})}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Sotish narxi</label>
+            <input 
+              type="number" className="w-full p-2.5 bg-transparent border border-gray-500 rounded-xl"
+              value={formData.sale_price} onChange={e => setFormData({...formData, sale_price: e.target.value})}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-4">
+          <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700">Saqlash</button>
+          <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Bekor qilish</button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 };

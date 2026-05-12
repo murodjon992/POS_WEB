@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SidebarProvider } from './context/SidebarContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SocketProvider } from './context/SocketContext'; // Yangi import
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// Layoutlar
+// Sahifalar (Sizning importlaringiz)
 import AdminLayout from './layouts/AdminLAyout'; 
 import MainLayout from './layouts/MainLayout';
-
-// Sahifalar
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
@@ -18,6 +20,15 @@ import ImportExcel from './pages/ImportExcel';
 import Plans from './pages/Plans';
 import Users from './pages/Users';
 import LandingPage from './pages/LandingPage';
+import StaffManagement from './pages/Staff';
+import POSPage from './pages/POSPage';
+import DebtorsPage from './pages/DebtorsPage';
+import SuppliersPage from './pages/SuppliersPage';
+import SalesHistoryPage from './pages/SalesHistoryPage';
+import OwnerSubscription from './pages/OwnerSubscription';
+import Register from './pages/Register';
+
+const queryClient = new QueryClient();
 
 function App() {
   const [user, setUser] = useState(null);
@@ -39,18 +50,13 @@ function App() {
     setIsAuthenticated(true);
     setUser(userData);
     localStorage.setItem('user_data', JSON.stringify(userData));
-    // Login bo'lgandan keyin dashboardga yo'naltirish shart emas, 
-    // chunki state o'zgarganda Router o'zi qayta render qiladi.
   };
 
   if (loading) return null;
 
-  // Himoyalangan Layout komponenti
   const ProtectedLayout = () => {
     if (!isAuthenticated) return <Navigate to="/login" replace />;
-    
     const SelectedLayout = user?.is_superuser ? AdminLayout : MainLayout;
-
     return (
       <SidebarProvider>
         <SelectedLayout user={user} />
@@ -59,50 +65,67 @@ function App() {
   };
 
   return (
-    <Router>
-      <Routes>
-        {/* LANDING PAGE: Faqat mehmonlar uchun yoki doim ochiq */}
-        <Route 
-          path="/" 
-          element={!isAuthenticated ? <LandingPage /> : <Navigate to="/dashboard" replace />} 
+    <QueryClientProvider client={queryClient}>
+      {/* SocketProvider hamma narsani eshitib turadi */}
+      <SocketProvider user={user} isAuthenticated={isAuthenticated}>
+        <Router>
+          <ToastContainer 
+          position="bottom-right" 
+          autoClose={3000} 
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
         />
+          <Routes>
+            <Route path="/register" element={<Register replace />} /> 
+            <Route path="/" element={!isAuthenticated ? <LandingPage /> : <Navigate to="/dashboard" replace />} />
+            
+            <Route path="/login" element={!isAuthenticated ? <Login onLoginSuccess={handleLoginSuccess} /> : (
+              user?.role === 'seller' ? <Navigate to="/dashboard/pos" replace /> : <Navigate to="/dashboard" replace />)} />
 
-        {/* LOGIN: Faqat tizimga kirmaganlar uchun */}
-        <Route 
-          path="/login" 
-          element={!isAuthenticated ? <Login onLoginSuccess={handleLoginSuccess} /> : <Navigate to="/dashboard" replace />} 
-        />
+            <Route path="/dashboard" element={<ProtectedLayout />}>
+              <Route index element={user?.role === 'seller' ? <Navigate to="/dashboard/pos" replace /> : (user?.is_superuser ? <SuperAdminDashboard /> : <Dashboard/>)} />
+              
+              <Route path="categories" element={<Categories user={user} />} /> 
+              <Route path="products" element={<Products user={user} />} />
+              <Route path="pos" element={<POSPage />} />
 
-        {/* BARCHA HIMOYALANGAN SAHIFALAR /dashboard OSTIDA */}
-        <Route path="/dashboard" element={<ProtectedLayout />}>
-          {/* Index sahifa ( /dashboard ) */}
-          <Route index element={user?.is_superuser ? <SuperAdminDashboard /> : <Dashboard />} />
-          
-          {/* Umumiy sahifalar */}
-          <Route path="categories" element={<Categories user={user} />} /> 
-          <Route path="products" element={<Products user={user} />} />
-          <Route path="inventory" element={<Inventory />} />
-          <Route path="import" element={<ImportExcel />} />
-          
-          {/* Admin sahifalari */}
-          {user?.is_superuser && (
-            <>
-              <Route path="users" element={<Users />} />
-              <Route path="subscriptions" element={<Subscriptions />} />
-              <Route path="plans" element={<Plans />} />
-            </>
-          )}
+              {(user?.role === "owner" || user?.role === "seller") && (
+                <>
+                  <Route path="debtors" element={<DebtorsPage />} />
+                  <Route path="sales" element={<SalesHistoryPage />} />
+                  <Route path="inventory" element={<Inventory />} />
+                </>
+              )}
 
-          {/* Owner sahifalari */}
-          {!user?.is_superuser && (
-            <Route path="my-shop" element={<div>Do'kon sozlamalari</div>} />
-          )}
-        </Route>
+              {user?.is_superuser && (
+                <>
+                  <Route path="users" element={<Users />} />
+                  <Route path="subscriptions" element={<Subscriptions />} />
+                  <Route path="plans" element={<Plans />} />
+                </>
+              )}
+              <Route path="import" element={<ImportExcel />} />
 
-        {/* Noma'lum yo'llar */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+              {!user?.is_superuser && user?.role === "owner" && (
+                <>
+                  <Route path="staff" element={<StaffManagement />} />
+                  <Route path="suppliers" element={<SuppliersPage />} />
+                  <Route path="my-shop" element={<div>Do'kon sozlamalari</div>} />
+                  <Route path="my-subscription" element={<OwnerSubscription />} />
+                </>
+              )}
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </SocketProvider>
+    </QueryClientProvider>
   );
 }
 

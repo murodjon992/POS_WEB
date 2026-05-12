@@ -49,7 +49,6 @@ const Categories = ({ user }) => {
       });
     } else {
       setSelectedId(null);
-      // Yangi ochilganda: agar superadmin bo'lsa tanlashga qo'yamiz, bo'lmasa avtomatik o'zi
       setFormData({ name: "", owner_id: "" });
     }
     setIsModalOpen(true);

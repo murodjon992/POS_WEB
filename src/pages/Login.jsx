@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, User, Loader2, AlertCircle } from 'lucide-react';
 import api from '../api/api';
+import { Link } from 'react-router-dom';
 
 
 const Login = ({ onLoginSuccess }) => {
@@ -21,8 +22,7 @@ const Login = ({ onLoginSuccess }) => {
         password: password
       });
 
-      // 2. Ma'lumotlarni qabul qilish
-      // Taxmin: Backend { "token": "...", "user": { "username": "admin", "is_superuser": true } } qaytaradi
+     
       const { token, user } = response.data; 
       
       if (token) {
@@ -30,8 +30,13 @@ const Login = ({ onLoginSuccess }) => {
         localStorage.setItem('auth_token', token);
         localStorage.setItem('user_data', JSON.stringify(user)); 
 
-        // App.jsx dagi holatni yangilash (user ma'lumotini uzatamiz)
         onLoginSuccess(user); 
+        // App.jsx dagi holatni yangilash (user ma'lumotini uzatamiz)
+        if(user.role === 'seller'){
+          window.location.href ="/dashborad/pos";
+        } else {
+          window.location.href ="/dashboard"
+        }
       } else {
         setError("Serverdan ma'lumot to'liq kelmadi.");
       }
@@ -107,10 +112,7 @@ const Login = ({ onLoginSuccess }) => {
           </div>
 
           {/* SUBMIT BUTTON */}
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-400 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-orange-200 flex items-center justify-center gap-2 mt-8"
+          <button  type="submit" disabled={loading}className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-400 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-orange-200 flex items-center justify-center gap-2 mt-8"
           >
             {loading ? (
               <>
@@ -122,7 +124,9 @@ const Login = ({ onLoginSuccess }) => {
             )}
           </button>
         </form>
-
+ <p className="text-center mt-8 text-slate-500 font-medium">
+              Hisobingiz yo'qmi? <Link to="/register" className="text-indigo-600 font-bold hover:underline">Ro'yxatdan o'tish</Link>
+            </p>
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400">
             © 2026 Baraka-POS System. Barcha huquqlar himoyalangan.

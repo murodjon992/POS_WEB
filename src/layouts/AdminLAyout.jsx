@@ -42,7 +42,6 @@ const AdminLayout = ({ user }) => {
       items: [
         { id: 'categories', label: 'Kategoriyalar', icon: <Store size={22} />, path: '/dashboard/categories' },
         { id: 'products', label: 'Mahsulotlar', icon: <ScanBarcode size={22} />, path: '/dashboard/products' },
-        { id: 'inventory', label: 'Ombor zaxirasi', icon: <Warehouse size={22} />, path: '/dashboard/inventory' },
         { id: 'import', label: 'Excel Import', icon: <Import size={22} />, path: '/dashboard/import' },
       ]
     },
