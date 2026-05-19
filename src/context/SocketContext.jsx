@@ -10,98 +10,105 @@ export const SocketProvider = ({ children, user, isAuthenticated }) => {
   const reconnectTimeoutRef = useRef(null);
 
   const connect = () => {
-    // Agar eski ulanish bo'lsa yoki hali login qilmagan bo'lsa, to'xtatamiz
+    // Agar foydalanuvchi tizimga kirmagan bo'lsa, ulanmaymiz
     if (!isAuthenticated || !user) return;
     
-    // Mavjud ulanishni tozalash
+    // Mavjud faol ulanish bo'lsa va u ochiq bo'lsa, qayta ulanish shart emas
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) return;
+
     if (socketRef.current) {
       socketRef.current.close();
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    // Portni 8000 deb qat'iy belgiladik (Backend portingiz)
-    const socketUrl = `${protocol}${window.location.hostname}:8000/ws/pos/`;
+    
+    // 🔥 TUZATISH: Portni butunlay olib tashladik. Endi ishlab turgan domen portiga (80/443) moslashadi.
+    const socketUrl = `${protocol}${window.location.host}/ws/pos/`;
 
+    console.log("🔗 Soketga ulanishga urinish:", socketUrl);
     const socket = new WebSocket(socketUrl);
 
     socket.onopen = () => {
-      // Ulanish muvaffaqiyatli bo'lsa, qayta ulanish taymerini o'chiramiz
+      console.log("🟢 Soket muvaffaqiyatli ulandi!");
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
 
     socket.onmessage = (event) => {
-  try {
-    const data = JSON.parse(event.data);
-    console.log("📩 Soketdan xabar keldi:", data);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("📩 Soketdan xabar keldi:", data);
 
-    // Endi data to'g'ridan-to'g'ri {action: "...", payload: {...}} ko'rinishida keladi
-    switch (data.action) {
-      case "STOCK_UPDATE":
-        queryClient.invalidateQueries(['inventory']);
-        queryClient.invalidateQueries(['products']);
-        if(user?.role !== 'superadmin'){
-        toast.success("Ombor yangilandi! 📦");
-        }
-        break;
+        switch (data.action) {
+          case "STOCK_UPDATE":
+            queryClient.invalidateQueries(['inventory']);
+            queryClient.invalidateQueries(['products']);
+            if (user?.role !== 'superadmin') {
+              toast.success("Ombor yangilandi! 📦");
+            }
+            break;
 
-      case "SUBSCRIPTION_UPDATE":
-        queryClient.invalidateQueries(['my-sub']);
-        queryClient.invalidateQueries(['owner-dashboard']);
-        queryClient.invalidateQueries(['admin-subscriptions']);
-        toast.info("Obuna holati yangilandi! 🚀");
-        break;
+          case "SUBSCRIPTION_UPDATE":
+            queryClient.invalidateQueries(['my-sub']);
+            queryClient.invalidateQueries(['owner-dashboard']);
+            queryClient.invalidateQueries(['admin-subscriptions']);
+            toast.info("Obuna holati yangilandi! 🚀");
+            break;
 
-      case "NEW_SALE":
-        queryClient.invalidateQueries(['sales-history']);
-        queryClient.invalidateQueries(['owner-dashboard']);
-        queryClient.invalidateQueries(['daily-summary']);
-        if(user?.role !== 'superadmin'){
-          toast.success("Yangi savdo! 💰");
-        }
-        break;
-        
-        case "DEBT_PAY":
-          queryClient.invalidateQueries(['debtors']);
-          queryClient.invalidateQueries(['owner-dashboard']);
-          if(user?.role !== 'superadmin'){
+          case "NEW_SALE":
+            queryClient.invalidateQueries(['sales-history']);
+            queryClient.invalidateQueries(['owner-dashboard']);
+            queryClient.invalidateQueries(['daily-summary']);
+            if (user?.role !== 'superadmin') {
+              toast.success("Yangi savdo! 💰");
+            }
+            break;
+            
+          case "DEBT_PAY":
+            queryClient.invalidateQueries(['debtors']);
+            queryClient.invalidateQueries(['owner-dashboard']);
+            if (user?.role !== 'superadmin') {
               toast.info(`Qarz to'landi.`);
-          }
-        break;
+            }
+            break;
 
-      default:
-        console.warn("Noma'lum action:", data.action);
-    }
-  } catch (err) {
-    console.error("Xabarni o'qishda xatolik:", err);
-  }
-};
+          default:
+            console.warn("Noma'lum action:", data.action);
+        }
+      } catch (err) {
+        console.error("Xabarni o'qishda xatolik:", err);
+      }
+    };
 
     socket.onclose = (e) => {
-      // Avtomatik qayta ulanish (3 soniyadan keyin)
+      console.log(`🔴 Soket yopildi (Kod: ${e.code}). 3 soniyadan keyin qayta ulanadi...`);
+      
+      // Cheksiz taymerlar ko'payib ketmasligi uchun oldingisini tozalaymiz
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      
       reconnectTimeoutRef.current = setTimeout(() => {
         connect();
       }, 3000);
     };
 
     socket.onerror = (err) => {
-      console.error("WebSocket xatosi ⚠️");
-      socket.close();
+      console.error("⚠️ WebSocket xatoga uchradi:", err);
+      // 🔥 TUZATISH: Bu yerda socket.close() chaqirmaymiz, chunki onclose o'zi avtomatik ishlaydi
     };
 
     socketRef.current = socket;
   };
 
   useEffect(() => {
-    // Login holati o'zgarganda ulanishni boshlash
     if (isAuthenticated && user) {
       connect();
     }
 
-    // Component unmount bo'lganda tozalash
     return () => {
       if (socketRef.current) {
+        // Unmount bo'lganda onclose hodisasini tozalaymiz, aks holda yana qayta ulanishga harakat qiladi
+        socketRef.current.onclose = null; 
         socketRef.current.close();
       }
       if (reconnectTimeoutRef.current) {
