@@ -46,6 +46,7 @@ const SalesHistoryPage = () => {
     }
     try {
       await api.post('/return-product/', {
+        sale_id:returnSale.id,
         payment_method: returnSale.payment_method,
         customer_id: returnSale.customer,
         items: [{ barcode: returnItem.barcode, quantity: returnQty }]
@@ -54,6 +55,8 @@ const SalesHistoryPage = () => {
       setShowReturnModal(false);
       toast.success("Muvaffaqiyatli qaytarildi");
     } catch (err) {
+      console.log(err.response?.data);
+      
       toast.error(err.response?.data?.message || "Vozvratda xatolik");
     }
   };
@@ -61,7 +64,7 @@ const SalesHistoryPage = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header & Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-[2rem] shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-4xl shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">Savdolar Tarixi</h1>
           <p className="text-slate-500 text-sm">Barcha amalga oshirilgan sotuvlar jurnali</p>
@@ -75,7 +78,7 @@ const SalesHistoryPage = () => {
               <select
                 value={selectedSeller}
                 onChange={(e) => setSelectedSeller(e.target.value)}
-                className="pl-11 pr-10 py-3 bg-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-slate-700 w-full md:min-w-[200px]"
+                className="pl-11 pr-10 py-3 bg-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer text-slate-700 w-full md:min-w-50"
               >
                 <option value="">Barcha sotuvchilar</option>
                 {sellers?.map(s => (
@@ -104,12 +107,12 @@ const SalesHistoryPage = () => {
         {isLoading ? (
           <div className="text-center py-10 text-slate-400 font-bold animate-pulse">Yuklanmoqda...</div>
         ) : sales.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[2rem] text-slate-300 font-bold text-xl border-2 border-dashed border-slate-100">
+          <div className="text-center py-20 bg-white rounded-4xl text-slate-300 font-bold text-xl border-2 border-dashed border-slate-100">
             Savdolar topilmadi
           </div>
         ) : (
           sales.map((sale) => (
-            <div key={sale.id} className="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-slate-100 mb-4 transition-all hover:shadow-md">
+            <div key={sale.id} className="bg-white rounded-4xl shadow-sm overflow-hidden border border-slate-100 mb-4 transition-all hover:shadow-md">
               <div 
                 onClick={() => setExpandedSale(expandedSale === sale.id ? null : sale.id)}
                 className={`p-5 flex items-center justify-between cursor-pointer transition-colors ${
@@ -215,7 +218,7 @@ const SalesHistoryPage = () => {
       {/* Vozvrat Modal qismini o'zingizning kodingizdan qo'shib qo'ying (o'zgarmagan) */}
       {showReturnModal && returnItem && (
           /* Modal kodi o'zgarishsiz qoladi... */
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-150 flex items-center justify-center p-4">
              {/* ... Modalingizni shu yerga qo'ying ... */}
              <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl">
                 <div className="px-8 py-6 bg-rose-600 text-white relative">
@@ -224,7 +227,7 @@ const SalesHistoryPage = () => {
                 </div>
                 <div className="p-8 space-y-6">
                    {/* Modal content... */}
-                   <button onClick={executeReturn} className="w-full py-5 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase tracking-wider hover:bg-rose-600 transition-all">Vozvratni tasdiqlash</button>
+                   <button onClick={executeReturn} className="w-full py-5 bg-slate-900 text-white rounded-3xl font-black uppercase tracking-wider hover:bg-rose-600 transition-all">Vozvratni tasdiqlash</button>
                 </div>
              </div>
           </div>

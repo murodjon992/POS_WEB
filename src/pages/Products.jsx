@@ -69,7 +69,6 @@ const Products = ({ user }) => {
       if (selectCategoryFilter) url += `&category=${selectCategoryFilter}`
 
       const res = await api.get(url)
-      console.log(res);
       
       if (res.data && res.data.results) {
         setProducts(res.data.results); 

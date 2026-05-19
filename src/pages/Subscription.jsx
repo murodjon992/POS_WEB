@@ -57,7 +57,7 @@ const { data: plans = [] } = useQuery({
         </button>
       </div>
 
-      <div className="bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-4xl shadow-2xl border border-slate-100 overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-tighter">
             <tr>

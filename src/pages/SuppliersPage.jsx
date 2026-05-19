@@ -158,21 +158,21 @@ const handleSelectForReturn = (item) => {
     <div className="p-6 bg-slate-50 min-h-screen font-sans">
       {/* Statistika kartalari */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-        <div className="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
+        <div className="bg-white p-4 rounded-4xl shadow-sm border border-slate-100 flex items-center gap-5">
           <div className="p-4 bg-amber-50 text-amber-600 rounded-2xl"><ArrowUpCircle size={28} /></div>
           <div>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Umumiy Qarzimiz</p>
             <h3 className="text-3xl font-black text-slate-800">{totalSupplierDebt.toLocaleString()} so'm</h3>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
+        <div className="bg-white p-4 rounded-4xl shadow-sm border border-slate-100 flex items-center gap-5">
           <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl"><Truck size={28} /></div>
           <div>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Yetkazib beruvchilar</p>
             <h3 className="text-3xl font-black text-slate-800">{suppliers.length} ta</h3>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
+        <div className="bg-white p-4 rounded-4xl shadow-sm border border-slate-100 flex items-center gap-5">
           <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl"><Box size={28} /></div>
           <div>
             <button onClick={fetchAllPurchases} className="flex items-center gap-2 px-6 py-4 bg-slate-800 text-white rounded-2xl hover:bg-slate-700 transition-all font-bold">
@@ -231,8 +231,8 @@ const handleSelectForReturn = (item) => {
 
       {/* --- VOZVRAT MODAL OYNASI --- */}
       {showReturnModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[120] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[1rem] w-full max-w-md overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-120 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-3 bg-blue-600 text-white flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold">Mahsulotni qaytarish</h3>
@@ -294,7 +294,7 @@ const handleSelectForReturn = (item) => {
               <button
                 onClick={handleReturnSubmit}
                 disabled={loadingReturn || !returnQty || returnQty <= 0 || returnQty > selectedProduct?.maxQty}
-                className={`w-full py-5 rounded-[1.5rem] font-black transition-all shadow-lg uppercase tracking-widest ${returnQty > selectedProduct?.maxQty ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-rose-200'}`}
+                className={`w-full py-5 rounded-3xl font-black transition-all shadow-lg uppercase tracking-widest ${returnQty > selectedProduct?.maxQty ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-rose-200'}`}
               >
                 {loadingReturn ? "Bajarilmoqda..." : "Vozvratni yakunlash"}
               </button>
@@ -305,7 +305,7 @@ const handleSelectForReturn = (item) => {
 
       {/* --- TARIX MODALI --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-100 flex items-center justify-center p-4">
           <div className="bg-white rounded-[20px] w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col">
             <div className="px-4 py-3 flex justify-between items-center bg-indigo-600 text-white">
               <div>
@@ -397,9 +397,9 @@ const handleSelectForReturn = (item) => {
 
       {/* --- TO'LOV MODALI --- */}
       {showPayModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="p-6 bg-gradient-to-br from-orange-500 to-amber-600 text-white relative">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-110 flex items-center justify-center p-4">
+          <div className="bg-white rounded-4xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 bg-linear-to-br from-orange-500 to-amber-600 text-white relative">
               <button onClick={() => setShowPayModal(false)} className="absolute right-4 top-4 hover:bg-white/20 rounded-full p-1"><X size={20} /></button>
               <h3 className="text-xl font-bold">Yetkazib beruvchiga to'lov</h3>
               <p className="opacity-90">{selectedSupplier?.name}</p>
@@ -420,7 +420,7 @@ const handleSelectForReturn = (item) => {
 
       {/* --- BARCHA KIRIMLAR MODALI --- */}
       {showAllPurchasesModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[130] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-130 flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] w-full max-w-7xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
             <div className="p-6 bg-slate-800 text-white flex justify-between items-center">
               <h3 className="text-xl font-black uppercase tracking-widest">Barcha tovar kirimlari tarixi</h3>

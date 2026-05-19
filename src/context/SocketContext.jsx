@@ -25,7 +25,6 @@ export const SocketProvider = ({ children, user, isAuthenticated }) => {
     const socket = new WebSocket(socketUrl);
 
     socket.onopen = () => {
-      console.log("WebSocket muvaffaqiyatli ulandi ✅");
       // Ulanish muvaffaqiyatli bo'lsa, qayta ulanish taymerini o'chiramiz
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
@@ -80,7 +79,6 @@ export const SocketProvider = ({ children, user, isAuthenticated }) => {
 };
 
     socket.onclose = (e) => {
-      console.log("WebSocket uzildi ❌ Qayta ulanish kutilmoqda...");
       // Avtomatik qayta ulanish (3 soniyadan keyin)
       reconnectTimeoutRef.current = setTimeout(() => {
         connect();

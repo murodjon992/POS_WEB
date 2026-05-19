@@ -71,6 +71,8 @@ const DebtorsPage = () => {
     }
   };
 
+  console.log(debtorDetails?.logs);
+  
   // --- 4. Vozvratni Yakunlash ---
   const handleReturnSubmit = async () => {
     if (!selectedItem || returnQty <= 0) return;
@@ -112,7 +114,7 @@ const DebtorsPage = () => {
     <div className="p-6 bg-slate-50 min-h-screen font-sans">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
+        <div className="bg-white p-6 rounded-4xl shadow-sm border border-slate-100 flex items-center gap-5">
           <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl"><ArrowUpRight size={32} /></div>
           <div>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Umumiy Nasiyalar</p>
@@ -121,7 +123,7 @@ const DebtorsPage = () => {
             </h3>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
+        <div className="bg-white p-6 rounded-4xl shadow-sm border border-slate-100 flex items-center gap-5">
           <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl"><UserCircle size={32} /></div>
           <div>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Qarzdorlar soni</p>
@@ -184,7 +186,7 @@ const DebtorsPage = () => {
 
       {/* --- MODAL: QARZ TO'LASH --- */}
       {showPayModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[150] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-150 flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-black text-slate-800">Qarz uzish</h3>
@@ -224,8 +226,8 @@ const DebtorsPage = () => {
 
     {/* --- MODAL: TARIX (To'lovlar va Savdolar) --- */}
 {showHistoryModal && (
-  <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-    <div className="bg-white rounded-[2rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+  <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-100 flex items-center justify-center p-4">
+    <div className="bg-white rounded-4xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
       
       {/* Modal Header */}
       <div className="px-8 py-6 bg-indigo-600 text-white flex justify-between items-center">
@@ -343,7 +345,7 @@ const DebtorsPage = () => {
 
       {/* --- MODAL: VOZVRAT SONI --- */}
       {showReturnModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-200 flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl">
             <h3 className="text-xl font-black text-slate-800 mb-6 text-center">Vozvrat miqdori</h3>
             <div className="flex items-center gap-4 bg-slate-100 p-2 rounded-2xl mb-8">

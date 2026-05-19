@@ -42,7 +42,7 @@ const Inventory = () => {
 
   const stockInMutation = useMutation({
     mutationFn: async (data) => {
-      let supplierId = data.supplierId;
+      let { supplierId } = data;
       if (data.paymentMethod === 'supplier_debt' && data.isNewSupplier) {
         const res = await api.post("/suppliers/", { name: data.newSupplierName, phone: data.newSupplierPhone});
         supplierId = res.data.id;
@@ -96,14 +96,14 @@ const handleUpdateStock = (e) => {
     <div className="space-y-3 p-4 max-w-10xl mx-auto">
       {/* STATISTIKA */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
+        <div className="bg-white p-6 rounded-4xl shadow-sm border border-slate-100 flex items-center gap-5">
           <div className="p-4 bg-red-50 text-red-500 rounded-2xl"><Package size={28} /></div>
           <div>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tugagan mahsulotlar</p>
             <p className="text-3xl font-black text-slate-800">{alerts.out_of_stock}</p>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5">
+        <div className="bg-white p-6 rounded-4xl shadow-sm border border-slate-100 flex items-center gap-5">
           <div className="p-4 bg-amber-50 text-amber-500 rounded-2xl"><AlertCircle size={28} /></div>
           <div>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Kam qolganlar</p>
@@ -124,7 +124,7 @@ const handleUpdateStock = (e) => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-3 px-4 py-2 bg-white border border-slate-200 rounded-2xl min-w-[240px]">
+        <div className="flex items-center gap-3 px-4 py-2 bg-white border border-slate-200 rounded-2xl min-w-60">
           <Filter size={20} className="text-slate-400" />
           <select 
             className="w-full bg-transparent outline-none font-bold text-slate-700"
@@ -197,7 +197,7 @@ const handleUpdateStock = (e) => {
 
       {/* KIRIM MODALI */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex justify-between items-center">
               <div>
@@ -223,7 +223,7 @@ const handleUpdateStock = (e) => {
               </div>
 
               {/* To'lov turi */}
-              <div className="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-[1.5rem]">
+              <div className="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-3xl">
                 <button 
                   type="button" 
                   onClick={() => setPaymentMethod("cash")}
@@ -243,7 +243,25 @@ const handleUpdateStock = (e) => {
               {/* Supplier qismi (faqat nasiya bo'lsa) */}
               {paymentMethod === 'supplier_debt' && (
                 <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
-                  {!isNewSupplier ? (
+                  {isNewSupplier ?  (
+                    <div className=" gap-2">
+                      <div>
+                      <input 
+                        type="text"
+                        placeholder="Yetkazib beruvchi nomi..."
+                        className="flex-1 p-3 mb-3 w-full  border border-slate-500 rounded-2xl outline-none font-medium"
+                        value={newSupplierName}
+                        onChange={(e) => setNewSupplierName(e.target.value)}
+                        autoFocus
+                        />
+                        </div>
+                        <div>
+                      <input type="text" placeholder="Telefon raqami..."
+      className="w-full p-3 bg-white border border-slate-500 rounded-2xl outline-none font-bold text-slate-700 focus:border-amber-400 transition-all"
+      value={newSupplierPhone}onChange={(e) => setNewSupplierPhone(e.target.value)}/>
+      </div>
+                    </div>
+                  ) : (
                     <div className="relative group">
                       <select 
                         className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-slate-700 appearance-none"
@@ -261,28 +279,6 @@ const handleUpdateStock = (e) => {
                       >
                         <UserPlus size={18} />
                       </button>
-                    </div>
-                  ) : (
-                    <div className=" gap-2">
-                      <div>
-                      <input 
-                        type="text"
-                        placeholder="Yetkazib beruvchi nomi..."
-                        className="flex-1 p-3 mb-3 w-full  border border-slate-500 rounded-2xl outline-none font-medium"
-                        value={newSupplierName}
-                        onChange={(e) => setNewSupplierName(e.target.value)}
-                        autoFocus
-                        />
-                        </div>
-                        <div>
-                      <input 
-      type="text"
-      placeholder="Telefon raqami..."
-      className="w-full p-3 bg-white border border-slate-500 rounded-2xl outline-none font-bold text-slate-700 focus:border-amber-400 transition-all"
-      value={newSupplierPhone}
-      onChange={(e) => setNewSupplierPhone(e.target.value)}
-      />
-      </div>
                     </div>
                   )}
                 </div>

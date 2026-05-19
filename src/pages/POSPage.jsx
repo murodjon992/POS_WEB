@@ -181,7 +181,7 @@ const POSPage = () => {
         <div className="flex gap-2 flex-wrap mb-2 overflow-x-auto pb-2 scrollbar-hide">
           <button 
             onClick={() => setSelectedCat(null)}
-            className={`px-2 py-1 rounded-full font-bold transition-all shadow-sm ${!selectedCat ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 hover:bg-indigo-100'}`}
+            className={`px-2 py-1 rounded-full font-bold transition-all shadow-sm ${selectedCat ? 'bg-white text-slate-500 hover:bg-indigo-100' : 'bg-indigo-600 text-white' }`}
           >
             Hammasi
           </button>
@@ -214,14 +214,14 @@ const POSPage = () => {
 
   {/* SELLER PROFIL PANELI */}
   {isSeller && (
-    <div className="flex items-center gap-3 bg-white p-2 pr-4 rounded-2xl shadow-lg border border-indigo-50 h-[68px] animate-in fade-in slide-in-from-right-4 duration-500">
+    <div className="flex items-center gap-3 bg-white p-2 pr-4 rounded-2xl shadow-lg border border-indigo-50 h-17 animate-in fade-in slide-in-from-right-4 duration-500">
       {/* Rasm yoki Icon */}
       <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shrink-0">
         <UserIcon size={20} />
       </div>
       
       {/* Ism va Rol - Kichik ekranlarda yashirish mumkin */}
-      <div className="flex flex-col min-w-[100px]">
+      <div className="flex flex-col min-w-25">
         <span className="text-sm font-bold text-slate-800 leading-none truncate">
           {user?.username || 'Sotuvchi'}
         </span>
@@ -231,7 +231,7 @@ const POSPage = () => {
       </div>
 
       {/* Ajratuvchi chiziq */}
-      <div className="w-[1px] h-8 bg-slate-100 mx-1"></div>
+      <div className="w-px h-8 bg-slate-100 mx-1"></div>
 
       {/* Logout Tugmasi */}
       <button 
@@ -309,7 +309,7 @@ const POSPage = () => {
       </div>
 
       {/* 2. O'ng tomondagi Savat qismi */}
-      <div className="w-[450px] bg-white shadow-[-20px_0_40px_rgba(0,0,0,0.02)] z-10 flex flex-col border-l border-slate-100">
+      <div className="w-112.5 bg-white shadow-[-20px_0_40px_rgba(0,0,0,0.02)] z-10 flex flex-col border-l border-slate-100">
         <div className="flex justify-between p-2">
             <h2 className="text-xl font-bold text-indigo-500 uppercase">Keyingi Savdo: #{nextDailyId}</h2>
             <button onClick={() => setIsHistoryModalOpen(true)} className="p-2 hover:bg-slate-300 bg-slate-100 rounded-xl text-slate-900 transition-colors"><Clock size={20} />
@@ -406,7 +406,7 @@ const POSPage = () => {
           <button 
             disabled={cart.length === 0}
             onClick={handleCheckout}
-            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-slate-200 text-white py-6 rounded-[2rem] font-black text-xl shadow-2xl shadow-green-100 transition-all transform active:scale-95 flex items-center justify-center gap-3"
+            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-slate-200 text-white py-6 rounded-4xl font-black text-xl shadow-2xl shadow-green-100 transition-all transform active:scale-95 flex items-center justify-center gap-3"
           >
             <CreditCard size={24} /> SAVDONI YAKUNLASH
           </button>
@@ -494,7 +494,7 @@ const POSPage = () => {
                   <p className="font-black text-slate-800 text-lg">
                     {Number(sale.total_amount).toLocaleString()} <span className="text-[10px] text-slate-400">so'm</span>
                   </p>
-                  <p className="text-[10px] font-black text-red-500 truncate max-w-[150px]">
+                  <p className="text-[10px] font-black text-red-500 truncate max-w-37.5">
                     {sale.customer_name}
                   </p>
                 </div>

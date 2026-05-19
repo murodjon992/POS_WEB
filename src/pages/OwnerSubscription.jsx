@@ -67,7 +67,7 @@ const selectPlanMutation = useMutation({
           <Sparkles className="text-amber-500" /> Mening Obunam
         </h2>
         
-        <div className="bg-white rounded-[32px] shadow-2xl shadow-blue-100 p-8 border border-blue-50 flex flex-wrap items-center justify-between gap-6">
+        <div className="bg-white rounded-4xl shadow-2xl shadow-blue-100 p-8 border border-blue-50 flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <div className={`p-5 rounded-2xl ${mySub?.is_paid ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
               {isPending ? <Clock size={40} className="animate-spin" /> : <Crown size={40} />}
