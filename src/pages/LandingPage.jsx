@@ -81,7 +81,7 @@ const LandingPage = () => {
             <button className="w-full sm:w-auto px-8 py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 shadow-xl">
               Bepul sinab ko'rish
             </button>
-            <a href="./downloads/bpos.apk" download={'bpos.apk'} className="w-full sm:w-auto px-8 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 shadow-xl flex items-center justify-center gap-2">
+            <a href="/downloads/bpos.apk" download={'bpos.apk'} className="w-full sm:w-auto px-8 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 shadow-xl flex items-center justify-center gap-2">
               <Smartphone size={20} /> Android (APK) <Download size={18} />
             </a>
           </div>
