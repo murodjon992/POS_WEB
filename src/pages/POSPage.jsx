@@ -23,6 +23,30 @@ const POSPage = () => {
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const searchInputRef = useRef(null);
 
+    // QZ Tray skriptini sahifa yuklanganda dinamik qo'shish
+    useEffect(() => {
+        // Agar skript allaqachon ulangan bo'lsa, qayta ulamaymiz
+        if (window.loadQZTray || window.qz) return;
+
+        const script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.min.js";
+        script.async = true;
+        script.onload = () => {
+            console.log("QZ Tray skripti muvaffaqiyatli yuklandi.");
+        };
+        script.onerror = () => {
+            toast.error("Printer skriptini yuklashda xatolik yuz berdi!");
+        };
+        document.body.appendChild(script);
+
+        return () => {
+            // Sahifadan chiqib ketganda skriptni tozalash (ixtiyoriy)
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        };
+    }, []);
+
     const { data: categories = [] } = useQuery({
         queryKey: ['categories'],
         queryFn: () => api.get('/categories/').then(res => res.data.results || res.data)
@@ -103,7 +127,16 @@ const POSPage = () => {
 
     const printReceiptWithQZ = async (cart, totalPrice, paymentMethod, customerName, nextDailyId) => {
       try {
-        const qz = await window.loadQZTray();
+        // Skript yuklanganini tekshirish (xavfsiz variant)
+        const _loadQZTray = window.loadQZTray || (window.qz && (() => window.qz));
+        
+        if (!_loadQZTray) {
+          toast.error("Printer skripti hali yuklanmadi! 2 soniya kutib qayta urining.");
+          return;
+        }
+
+        const qz = typeof _loadQZTray === 'function' ? await _loadQZTray() : _loadQZTray;
+
         if (!qz.websocket.isActive()) {
           await qz.websocket.connect();
         }
@@ -286,59 +319,55 @@ const POSPage = () => {
               )}
             </div>
 
-          {/* GRID TIZIMI: 1024 o'lchamda ham, undan kattalarda ham chiroyli chiqadi */}
-<div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
-  {products.length > 0 ? (
-    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2.5">
-      {products.map(p => {
-        const cartItem = cart.find(item => item.id === p.id);
-        const inCartQty = cartItem ? cartItem.qty : 0;
-        const availableStock = p.stock_count - inCartQty;
-        const isLimitReached = availableStock <= 0;
+            {/* GRID TIZIMI */}
+            <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+              {products.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-2.5">
+                  {products.map(p => {
+                    const cartItem = cart.find(item => item.id === p.id);
+                    const inCartQty = cartItem ? cartItem.qty : 0;
+                    const availableStock = p.stock_count - inCartQty;
+                    const isLimitReached = availableStock <= 0;
 
-        return (
-          <div 
-            key={p.id} 
-            onClick={() => !isLimitReached && addToCart(p)} 
-            className={`bg-white p-3 rounded-xl border border-slate-50 transition-all group relative overflow-hidden shadow-sm flex flex-col justify-between h-28
-              ${isLimitReached ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:border-indigo-500 hover:shadow-md cursor-pointer'}`}
-          >
-            {/* Ustki qism: Nomi va kodi */}
-            <div>
-              <h3 className={`font-bold text-xs leading-tight line-clamp-2 ${isLimitReached ? 'text-gray-400' : 'text-slate-700 group-hover:text-indigo-600'}`}>{p.name}</h3>
-              <p className="text-slate-400 text-[10px] mt-0.5">Kod: {p.barcode}</p>
-            </div>
-            
-            {/* Pastki qism: Narxi, Zaxira Badge-i va + belgisi */}
-            <div className="flex justify-between items-center mt-2 pt-1 border-t border-slate-100">
-              <div className="flex flex-col">
-                <span className="text-xs font-black text-slate-800">{formatMoney(p.sale_price)}</span>
-                {/* Qaytarilgan Zaxira Badge (Siz aytgan Kategoriya/Ombor belgisi) */}
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 w-max ${isLimitReached ? 'bg-red-100 text-red-600' : 'bg-indigo-50 text-indigo-950'}`}>
-                  {isLimitReached ? '0 ta' : availableStock + ' ta'}
-                </span>
-              </div>
+                    return (
+                      <div 
+                        key={p.id} 
+                        onClick={() => !isLimitReached && addToCart(p)} 
+                        className={`bg-white p-3 rounded-xl border border-slate-50 transition-all group relative overflow-hidden shadow-sm flex flex-col justify-between h-28
+                          ${isLimitReached ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:border-indigo-500 hover:shadow-md cursor-pointer'}`}
+                      >
+                        <div>
+                          <h3 className={`font-bold text-xs leading-tight line-clamp-2 ${isLimitReached ? 'text-gray-400' : 'text-slate-700 group-hover:text-indigo-600'}`}>{p.name}</h3>
+                          <p className="text-slate-400 text-[10px] mt-0.5">Kod: {p.barcode}</p>
+                        </div>
+                        
+                        <div className="flex justify-between items-center mt-2 pt-1 border-t border-slate-100">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-slate-800">{formatMoney(p.sale_price)}</span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 w-max ${isLimitReached ? 'bg-red-100 text-red-600' : 'bg-indigo-50 text-indigo-950'}`}>
+                              {isLimitReached ? '0 ta' : availableStock + ' ta'}
+                            </span>
+                          </div>
 
-              {/* O'ng burchakdagi Plus (+) belgisi (Savatda bor-yo'qligiga qarab o'zgaradi) */}
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors shadow-sm
-                ${inCartQty > 0 ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white'}`}>
-                {inCartQty > 0 ? <span className="text-xs font-black">+{inCartQty}</span> : <Plus size={14} />}
-              </div>
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors shadow-sm
+                            ${inCartQty > 0 ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white'}`}>
+                            {inCartQty > 0 ? <span className="text-xs font-black">+{inCartQty}</span> : <Plus size={14} />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-300 py-16">
+                   <Package size={50} strokeWidth={1.5} className="mb-2 text-slate-400" />
+                   <p className="text-xs font-bold">Mahsulotlar yuklanmoqda...</p>
+                </div>
+              )}
             </div>
           </div>
-        );
-      })}
-    </div>
-  ) : (
-    <div className="h-full flex flex-col items-center justify-center text-slate-300 py-16">
-       <Package size={50} strokeWidth={1.5} className="mb-2 text-slate-400" />
-       <p className="text-xs font-bold">Mahsulotlar yuklanmoqda...</p>
-    </div>
-  )}
-</div>
-          </div>
 
-          {/* O'ng Tomon (Savat) - 1024px ekranda siqilib ketmaslik uchun o'lchamlari mutanosib qilindi */}
+          {/* O'ng Tomon (Savat) */}
           <div className="w-[280px] xl:w-[360px] bg-white shadow-xl z-10 flex flex-col border-l border-slate-200 shrink-0">
             <div className="flex justify-between p-2 items-center bg-slate-50 border-b border-slate-200">
                 <h2 className="text-[10px] xl:text-xs font-black text-indigo-600 uppercase tracking-tight">Kassa Navbati: #{nextDailyId}</h2>
@@ -354,7 +383,6 @@ const POSPage = () => {
               <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold text-[11px]">{cart.length} ta</span>
             </div>
 
-            {/* Savat ichidagi ro'yxat */}
             <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
               {cart.map(item => (
                 <div key={item.id} className="flex gap-2 items-center bg-slate-50 p-2 rounded-xl border border-slate-100">
@@ -377,7 +405,6 @@ const POSPage = () => {
               ))}
             </div>
 
-            {/* To'lov paneli */}
             <div className="p-3 bg-slate-50 border-t border-slate-200 space-y-3 shrink-0">
               <div className="space-y-1">
                  <div className="flex justify-between items-center">
