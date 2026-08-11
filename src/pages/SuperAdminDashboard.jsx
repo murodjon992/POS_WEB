@@ -1,47 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
   Users,CreditCard,TrendingUp,Package, Store,Search, ExternalLink,ShieldCheck, Calendar, AlertCircle,ArrowUpRight} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import api from "../api/api";
 
 const SuperAdminDashboard = () => {
-  const [stats, setStats] = useState(null);
-  const [stores, setStores] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-console.log(stores);
 
-  // Barcha ma'lumotlarni bitta useEffectda yuklaymiz (optimizatsiya)
-  useEffect(() => {
-    const getDashboardData = async () => {
-      try {
-        setLoading(true);
-        // Backend bitta endpointda hamma narsani qaytarishi kerak
-        const res = await api.get("/admin-store-stats/"); 
-        setStats(res.data.main_stats);
-        setStores(res.data.stores);
-      } catch (err) {
-      if (err.response) {
-      // Server javob qaytardi, lekin status 2xx emas (masalan: 500, 404, 403)
-      console.error("Server xatosi (Status):", err.response.status);
-      console.error("Serverdan kelgan xabar:", err.response.data);
-      
-      // Agar backendda xato bo'lsa, err.response.data ichida aniq xato yozilgan bo'ladi
-      alert(`Serverda xato: ${JSON.stringify(err.response.data)}`);
-      
-    } else if (err.request) {
-      // So'rov yuborildi, lekin serverdan javob kelmadi (Network error)
-      console.error("Serverga ulanib bo'lmadi:", err.request);
-      alert("Tarmoqda xato yoki server o'chgan!");
-    } else {
-      // So'rovni yuborishda qandaydir boshqa xato bo'ldi
-      console.error("Xato xabari:", err.message);
-    }
-      } finally {
-        setLoading(false);
-      }
-    };
-    getDashboardData();
-  }, []);
+  // MUHIM O'ZGARISH: endi useState+useEffect bilan bir martalik fetch emas,
+  // useQuery bilan 'owner-dashboard' kalitiga ulanamiz. SocketContext.jsx
+  // SUBSCRIPTION_UPDATE/NEW_SALE kelganda aynan shu kalitni invalidatsiya
+  // qiladi - shuning uchun endi bu sahifa ham socket orqali jonli yangilanadi.
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['owner-dashboard'],
+    queryFn: async () => {
+      const res = await api.get("/admin-store-stats/");
+      return res.data;
+    },
+  });
+
+  const stats = data?.main_stats;
+  const stores = data?.stores || [];
 
   // Obuna holatini aniqlash uchun yordamchi funksiya
   const getStatusInfo = (days) => {
@@ -50,13 +29,21 @@ console.log(stores);
     return { label: "Faol", color: "bg-emerald-50 text-emerald-600", border: "border-emerald-100" };
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-14 w-14 border-b-4 border-indigo-600 mx-auto"></div>
           <p className="mt-4 text-slate-500 font-bold">Global tizim yuklanmoqda...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <p className="text-red-500 font-bold">Ma'lumotlarni yuklashda xato yuz berdi.</p>
       </div>
     );
   }
@@ -83,9 +70,8 @@ console.log(stores);
         </div>
       </div>
 
-      {/* 2. MAIN STATS GRID - Backenddan kelgan yangi mantiqlar bilan */}
+      {/* 2. MAIN STATS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Jami foyda (SaaS egasining foydasi) */}
         <StatCard 
           icon={<TrendingUp size={26} />} 
           label="Tizim Foydasi" 
@@ -93,7 +79,6 @@ console.log(stores);
           subValue="Oxirgi 30 kunlik"
           color="emerald"
         />
-        {/* Aktiv do'konlar soni */}
         <StatCard 
           icon={<Store size={26} />} 
           label="Aktiv Do'konlar" 
@@ -101,7 +86,6 @@ console.log(stores);
           subValue={`${stats?.total_stores} tadan`}
           color="indigo"
         />
-        {/* Jami tizim aylanmasi (Hamma do'konlardagi sotuvlar) */}
         <StatCard 
           icon={<Package size={26} />} 
           label="Tizim GMV" 
@@ -109,7 +93,6 @@ console.log(stores);
           subValue="Umumiy savdolar"
           color="amber"
         />
-        {/* Muddati o'tayotgan obunalar */}
         <StatCard 
           icon={<AlertCircle size={26} />} 
           label="Qarzdorliklar" 
@@ -229,7 +212,6 @@ console.log(stores);
   );
 };
 
-// Yordamchi Komponentlar (Clean Code uchun)
 const StatCard = ({ icon, label, value, subValue, color }) => (
   <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
     <div className={`p-4 w-14 h-14 rounded-2xl mb-6 flex items-center justify-center bg-${color}-50 text-${color}-600 group-hover:rotate-6 transition-transform`}>

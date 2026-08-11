@@ -130,7 +130,7 @@ const Dashboard = () => {
     const [showExpenseModal, setShowExpenseModal] = useState(false);
 
     const { data: dashboardData, isLoading, isError } = useQuery({
-        queryKey: ['dashboard', date, page],
+        queryKey: ['owner-dashboard', date, page],
         queryFn: async () => {
             const res = await api.get(`/owner-dashboard/?date=${date}&page=${page}`);
             return res.data;
@@ -147,7 +147,7 @@ const Dashboard = () => {
     const daily_debt_sales = (s.daily_total_sales || 0) - (s.daily_cash_sales || 0);
 
     const handleExpenseSuccess = () => {
-        queryClient.invalidateQueries(['dashboard']);
+        queryClient.invalidateQueries(['owner-dashboard']);
         toast.success("Chiqim muvaffaqiyatli qo'shildi!");
     };
 

@@ -20,10 +20,14 @@ export const SocketProvider = ({ children, user, isAuthenticated }) => {
       socketRef.current.close();
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    
-    // 🔥 TUZATISH: Portni butunlay olib tashladik. Endi ishlab turgan domen portiga (80/443) moslashadi.
-    const socketUrl = `${protocol}${window.location.host}/ws/pos/`;
+   // Agarda loyiha localda ishlayotgan bo'lsa (localhost/127.0.0.1), backend portini (masalan: 8000) ko'rsatamiz:
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// Backend manzilini o'zingizning backend portingizga moslang (Masalan: 8000 port)
+const backendHost = isLocal ? 'localhost:8000' : window.location.host;
+
+const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+const socketUrl = `${protocol}${backendHost}/ws/pos/`;
 
     console.log("🔗 Soketga ulanishga urinish:", socketUrl);
     const socket = new WebSocket(socketUrl);
@@ -52,6 +56,7 @@ export const SocketProvider = ({ children, user, isAuthenticated }) => {
           case "SUBSCRIPTION_UPDATE":
             queryClient.invalidateQueries(['my-sub']);
             queryClient.invalidateQueries(['owner-dashboard']);
+            queryClient.invalidateQueries(['admin-store-stats']);
             queryClient.invalidateQueries(['admin-subscriptions']);
             toast.info("Obuna holati yangilandi! 🚀");
             break;
@@ -59,6 +64,7 @@ export const SocketProvider = ({ children, user, isAuthenticated }) => {
           case "NEW_SALE":
             queryClient.invalidateQueries(['sales-history']);
             queryClient.invalidateQueries(['owner-dashboard']);
+            queryClient.invalidateQueries(['admin-store-stats']);
             queryClient.invalidateQueries(['daily-summary']);
             if (user?.role !== 'superadmin') {
               toast.success("Yangi savdo! 💰");
@@ -125,3 +131,4 @@ export const SocketProvider = ({ children, user, isAuthenticated }) => {
 };
 
 export const useSocket = () => useContext(SocketContext);
+
