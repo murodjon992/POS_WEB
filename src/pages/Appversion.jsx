@@ -16,7 +16,7 @@ const AppVersionPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['app-version-admin'],
     queryFn: async () => {
-      const res = await api.get('/admin/app-version/');
+      const res = await api.get('/admin-app-version/');
       return res.data;
     },
   });
@@ -33,7 +33,7 @@ const AppVersionPage = () => {
   }, [data]);
 
   const saveMutation = useMutation({
-    mutationFn: (payload) => api.patch('/admin/app-version/', payload),
+    mutationFn: (payload) => api.patch('/admin-app-version/', payload),
     onSuccess: () => {
       queryClient.invalidateQueries(['app-version-admin']);
       toast.success('Versiya ma\'lumotlari saqlandi!');
