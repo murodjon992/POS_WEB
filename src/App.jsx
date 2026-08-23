@@ -27,6 +27,7 @@ import SuppliersPage from './pages/SuppliersPage';
 import SalesHistoryPage from './pages/SalesHistoryPage';
 import OwnerSubscription from './pages/OwnerSubscription';
 import Register from './pages/Register';
+import AppVersionPage from './pages/Appversion';
 
 const queryClient = new QueryClient();
 
@@ -107,6 +108,7 @@ function App() {
                   <Route path="users" element={<Users />} />
                   <Route path="subscriptions" element={<Subscriptions />} />
                   <Route path="plans" element={<Plans />} />
+                  <Route path="app-version" element={<AppVersion />} />
                 </>
               )}
               <Route path="import" element={<ImportExcel />} />

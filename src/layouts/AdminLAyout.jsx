@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Warehouse, Receipt, CalendarCheck, 
-  Menu, LogOut, Store, ScanBarcode, User, Settings, ChevronDown, X, Import,File
+  Menu, LogOut, Store, ScanBarcode, User, Settings, ChevronDown, X, Import,File,Rocket
 } from 'lucide-react';
 import myLogo from '../assets/icon.png'
 
@@ -50,6 +50,7 @@ const AdminLayout = ({ user }) => {
       items: [
         { id: 'plans', label: 'Tariflar', icon: <Receipt size={22} />, path: '/dashboard/plans' },
         { id: 'subscriptions', label: 'Obunalar', icon: <CalendarCheck size={22} />, path: '/dashboard/subscriptions' },
+        { id: 'appversion', label: 'Ilova Versiyasi', icon: <Rocket size={22} />, path: '/dashboard/app-version' },
       ]
     }
   ];
