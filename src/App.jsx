@@ -108,7 +108,7 @@ function App() {
                   <Route path="users" element={<Users />} />
                   <Route path="subscriptions" element={<Subscriptions />} />
                   <Route path="plans" element={<Plans />} />
-                  <Route path="app-version" element={<AppVersion />} />
+                  <Route path="app-version" element={<AppVersionPage />} />
                 </>
               )}
               <Route path="import" element={<ImportExcel />} />
